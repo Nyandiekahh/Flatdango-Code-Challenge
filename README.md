@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Flatdango
 
 Flatiron Movie Theater is open for business! You will be building out an
@@ -167,3 +168,7 @@ deliverables!**
    Example Response:
    {}
    ```
+=======
+# Flatdango-Code-Challenge
+>>>>>>> origin/main
+# Flatdango-Code-Challenge
