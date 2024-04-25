@@ -1,76 +1,68 @@
-const BASE_URL = 'http://localhost:3000';
+// Your code here
+$(document).ready(function() {
+    const baseURL = "http://localhost:3000";
+    var moviesData; // Store movie data globally
 
-// Callbacks
-const handleClick = (ramen) => {
-  const ramenDetail = document.getElementById('ramen-detail');
-  ramenDetail.innerHTML = `
-    <img class="detail-image" src="${ramen.image}" alt="${ramen.name}" />
-    <h2 class="name">${ramen.name}</h2>
-    <h3 class="restaurant">${ramen.restaurant}</h3>
-  `;
-  const ratingDisplay = document.getElementById('rating-display');
-  ratingDisplay.textContent = ramen.rating;
-  const commentDisplay = document.getElementById('comment-display');
-  commentDisplay.textContent = ramen.comment;
-};
-
-const addSubmitListener = () => {
-  const form = document.getElementById('new-ramen');
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const name = document.getElementById('new-name').value;
-    const restaurant = document.getElementById('new-restaurant').value;
-    const image = document.getElementById('new-image').value;
-    let rating = parseInt(document.getElementById('new-rating').value);
-    const comment = document.getElementById('new-comment').value;
-
-    // Validate the rating to be within the range of 0 to 10
-    if (rating < 0 || rating > 10 || isNaN(rating)) {
-      alert('Please enter a valid rating between 0 and 10.');
-      return;
+    // Function to fetch movie data from the server
+    function fetchMovies() {
+        $.get(`${baseURL}/films`, function(data) {
+            moviesData = data; // Store movie data globally
+            populateMovieList(moviesData);
+            displayMovieDetails(moviesData[0]);
+        });
     }
 
-    const newRamen = { name, restaurant, image, rating, comment };
+    // Populate the movie list sidebar
+    function populateMovieList(movies) {
+        var $filmsList = $("#films");
+        $filmsList.empty(); // Clear previous list
+        movies.forEach(function(movie) {
+            var $filmItem = $("<li>", {
+                class: "film item",
+                text: movie.title
+            });
+            $filmItem.data("movie", movie); // Store movie data
+            $filmsList.append($filmItem);
+        });
+    }
 
-    // Display the new ramen immediately
-    const ramenMenu = document.getElementById('ramen-menu');
-    const img = document.createElement('img');
-    img.src = newRamen.image;
-    img.alt = newRamen.name;
-    img.addEventListener('click', () => handleClick(newRamen));
-    ramenMenu.appendChild(img);
+    // Display details of the selected movie
+    function displayMovieDetails(movie) {
+        $("#title").text(movie.title);
+        $("#runtime").text(movie.runtime + " minutes");
+        $("#showtime").text(movie.showtime);
+        var availableTickets = movie.capacity - movie.tickets_sold;
+        $("#ticket-num").text(availableTickets + " remaining tickets");
+        $("#poster").attr("src", movie.poster);
+        $("#film-info").text(movie.description);
+    }
 
-    // Reset form fields
-    form.reset();
-
-    // POST new ramen data to the server
-    await fetch(`${BASE_URL}/ramens`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newRamen),
+    // Event listener for clicking on a movie in the sidebar
+    $("#films").on("click", "li", function() {
+        var movie = $(this).data("movie");
+        displayMovieDetails(movie);
     });
-  });
-};
 
-const displayRamens = async () => {
-  const response = await fetch(`${BASE_URL}/ramens`);
-  const ramens = await response.json();
-  const ramenMenu = document.getElementById('ramen-menu');
-  ramenMenu.innerHTML = '';
-  ramens.forEach((ramen) => {
-    const img = document.createElement('img');
-    img.src = ramen.image;
-    img.alt = ramen.name;
-    img.addEventListener('click', () => handleClick(ramen));
-    ramenMenu.appendChild(img);
-  });
-};
+    // Event listener for buying a ticket
+    $("#buy-ticket").click(function() {
+        var selectedMovie = $("#title").text();
+        var movie = moviesData.find(function(movie) {
+            return movie.title === selectedMovie;
+        });
+        if (movie) {
+            if (movie.tickets_sold < movie.capacity) {
+                movie.tickets_sold++;
+                displayMovieDetails(movie);
+                var availableTickets = movie.capacity - movie.tickets_sold;
+                if (availableTickets === 0) {
+                    alert("Sorry, tickets are sold out for this movie!");
+                }
+            } else {
+                alert("Sorry, tickets are sold out for this movie!");
+            }
+        }
+    });
 
-const main = () => {
-  displayRamens();
-  addSubmitListener();
-};
-
-document.addEventListener('DOMContentLoaded', main);
+    // Initialize the page
+    fetchMovies();
+});
